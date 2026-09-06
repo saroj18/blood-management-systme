@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import DonationScheduleTable from "@/components/donation-schedule-table";
 
+export const dynamic = "force-dynamic";
+
 const BloodBankDonationSchedulePage = async () => {
   try {
     const session = await getServerSession(authOptions);
