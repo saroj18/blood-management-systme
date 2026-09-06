@@ -1,7 +1,13 @@
 export const getLatLong = async (query: string) => {
   try {
     if (!query) return null;
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=chitwan`);
+    
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`, {
+      headers: {
+        "User-Agent": "BloodBankManagementSystem/1.0",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
+    });
     const data = await res.json();
 
     if (data.length > 0) {

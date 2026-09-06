@@ -49,7 +49,7 @@ const Form = ({ type }: { type: string }) => {
   const from = useSearchParams().get("from");
   const signinError = searchParams.get("error");
   const router = useRouter();
-  const [isSubmitting,setIsSubmitting]=useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || undefined;
     setSelectedFile(file);
@@ -158,9 +158,9 @@ const Form = ({ type }: { type: string }) => {
               });
               setTimeout(() => {
                 router.push("/");
-                setTimeout(()=>{
+                setTimeout(() => {
                   setIsSubmitting(false);
-                },1000)
+                }, 1000)
               }, 1000);
             }
           } else {
@@ -206,12 +206,12 @@ const Form = ({ type }: { type: string }) => {
           });
           setTimeout(() => {
             router.push(destination);
-            setTimeout(()=>{
+            setTimeout(() => {
               setIsSubmitting(false);
-            },1000)
+            }, 1000)
           }, 1000);
         }
-      }else{
+      } else {
         setIsSubmitting(false);
         return;
       }
