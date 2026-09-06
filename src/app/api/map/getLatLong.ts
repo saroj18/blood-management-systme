@@ -1,8 +1,8 @@
-export const getLatLong=async(query:string)=>{
-try {
-    if(!query) return null;
-const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-const data = await res.json();
+export const getLatLong = async (query: string) => {
+  try {
+    if (!query) return null;
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=chitwan`);
+    const data = await res.json();
 
     if (data.length > 0) {
       const { lat, lon } = data[0];
@@ -11,8 +11,8 @@ const data = await res.json();
       console.log("Location not found");
       return { success: false, message: "Location not found" };
     }
-} catch (error) {
+  } catch (error) {
     console.error("Error fetching location data:", error);
-    return {success:false, message:"Error fetching location data"};
-}
+    return { success: false, message: "Error fetching location data" };
+  }
 }
