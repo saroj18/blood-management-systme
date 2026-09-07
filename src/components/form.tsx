@@ -100,6 +100,29 @@ const Form = ({ type }: { type: string }) => {
     setDropdownValue(value);
   };
 
+  const handleFieldBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const form = e.currentTarget.form;
+    const fieldName = e.currentTarget.name;
+    if (!form || !fieldName) return;
+    try {
+      const formdata = new FormData(form);
+      if (type === "signup") {
+        formdata.append("location", JSON.stringify({ latitude, longitude }));
+      }
+      const validation = fromValidation(formdata, type);
+      const fieldErrors: Record<string, string[] | undefined> | undefined =
+        validation?.error?.flatten().fieldErrors;
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldName]: fieldErrors?.[fieldName] || undefined,
+      }));
+    } catch {
+      // Full validation runs on submit; ignore partial blur errors here.
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     setIsSubmitting(true);
     try {
@@ -335,6 +358,7 @@ const Form = ({ type }: { type: string }) => {
                       type="text"
                       id="name"
                       name="name"
+                      onBlur={handleFieldBlur}
                       className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                       placeholder="John Doe"
                     />
@@ -372,6 +396,7 @@ const Form = ({ type }: { type: string }) => {
                   type="text"
                   id="email"
                   name="email"
+                  onBlur={handleFieldBlur}
                   className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                   placeholder="you@example.com"
                 />
@@ -406,6 +431,7 @@ const Form = ({ type }: { type: string }) => {
                   type="password"
                   id="password"
                   name="password"
+                  onBlur={handleFieldBlur}
                   className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                   placeholder="••••••••"
                 />
@@ -448,6 +474,7 @@ const Form = ({ type }: { type: string }) => {
                   <select
                     name="role"
                     id="role"
+                    onBlur={handleFieldBlur}
                     className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 sm:text-sm"
                     onChange={handleOptionChange}
                     value={dropdownValue}
@@ -485,6 +512,7 @@ const Form = ({ type }: { type: string }) => {
                           type="number"
                           id="age"
                           name="age"
+                          onBlur={handleFieldBlur}
                           className="block w-full rounded-md border-gray-300 pl-4.5 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                           placeholder="22"
                         />
@@ -514,6 +542,7 @@ const Form = ({ type }: { type: string }) => {
                       <select
                         name="blood_group"
                         id="blood_group"
+                        onBlur={handleFieldBlur}
                         className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 sm:text-sm"
                       >
                         <option value="">Select your Blood Group</option>
@@ -560,6 +589,7 @@ const Form = ({ type }: { type: string }) => {
                           type="text"
                           id="blood_bank"
                           name="blood_bank"
+                          onBlur={handleFieldBlur}
                           className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                           placeholder="NRCS Blood Bank"
                         />
@@ -597,6 +627,7 @@ const Form = ({ type }: { type: string }) => {
                       type="text"
                       id="address"
                       name="address"
+                      onBlur={handleFieldBlur}
                       className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                       placeholder="1234 Main St, City, Country"
                     />
@@ -631,6 +662,7 @@ const Form = ({ type }: { type: string }) => {
                       type="number"
                       id="contact"
                       name="contact"
+                      onBlur={handleFieldBlur}
                       className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                       placeholder="9826853429"
                     />

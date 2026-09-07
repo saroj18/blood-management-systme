@@ -40,18 +40,44 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
   const [formErrors, setFormErrors] = useState<DonorFormErrors>({});
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+  const validateSingleField = (field: keyof DonorFormData, value: string | number | boolean) => {
+    switch (field) {
+      case 'name':
+        if (!String(value).trim()) return 'Name is required.';
+        if (String(value).trim().length < 3) return 'Name must be at least 3 characters.';
+        return '';
+      case 'password':
+        if (value && String(value).length < 6) return 'Password must be at least 6 characters.';
+        return '';
+      case 'blood_group':
+        if (!bloodGroups.includes(String(value))) return 'Select a valid blood group.';
+        return '';
+      case 'age':
+        if (Number(value) < 18 || Number(value) > 65) return 'Age must be between 18 and 65.';
+        return '';
+      case 'contact':
+        if (!/^(97|98)\d{8}$/.test(String(value))) {
+          return "Enter a valid 10-digit contact number starting with 97 or 98.";
+        }
+        return '';
+      case 'status':
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleBlur = (field: keyof DonorFormData) => {
+    const error = validateSingleField(field, formData[field]);
+    setFormErrors((prev) => ({ ...prev, [field]: error || undefined }));
+  };
+
   const validateForm = (): boolean => {
     const errors: DonorFormErrors = {};
-
-    if (!formData.name.trim()) errors.name = 'Name is required.';
-    if (formData.password && formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters.';
-    }
-    if (!bloodGroups.includes(formData.blood_group)) errors.blood_group = 'Select a valid blood group.';
-    if (formData.age < 18 || formData.age > 65) errors.age = 'Age must be between 18 and 65.';
-    if (!/^(97|98)\d{8}$/.test(formData.contact)) {
-      errors.contact = "Enter a valid 10-digit contact number starting with 97 or 98.";
-    }
+    (Object.keys(formData) as Array<keyof DonorFormData>).forEach((key) => {
+      const err = validateSingleField(key, formData[key]);
+      if (err) errors[key as keyof DonorFormErrors] = err;
+    });
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -120,7 +146,13 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: (e.target.value).toString() })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (formErrors.name) {
+                    setFormErrors((prev) => ({ ...prev, name: validateSingleField('name', e.target.value) || undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('name')}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="Enter Name"
               />
@@ -131,7 +163,13 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: (e.target.value).toString() })}
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formErrors.password) {
+                    setFormErrors((prev) => ({ ...prev, password: validateSingleField('password', e.target.value) || undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('password')}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="Enter password"
               />
@@ -141,7 +179,13 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
               <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
               <select
                 value={formData.blood_group}
-                onChange={(e) => setFormData({ ...formData, blood_group: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, blood_group: e.target.value });
+                  if (formErrors.blood_group) {
+                    setFormErrors((prev) => ({ ...prev, blood_group: validateSingleField('blood_group', e.target.value) || undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('blood_group')}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 {bloodGroups.map(group => (
@@ -156,7 +200,14 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
               <input
                 type="number"
                 value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setFormData({ ...formData, age: value });
+                  if (formErrors.age) {
+                    setFormErrors((prev) => ({ ...prev, age: validateSingleField('age', value) || undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('age')}
                 min="18"
                 max="65"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -170,7 +221,13 @@ const DonorUpdateModal: React.FC<DonorUpdateModalProps> = ({ donor, isOpen, onCl
               <input
                 type="tel"
                 value={formData.contact}
-                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, contact: e.target.value });
+                  if (formErrors.contact) {
+                    setFormErrors((prev) => ({ ...prev, contact: validateSingleField('contact', e.target.value) || undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('contact')}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="Enter contact number"
               />

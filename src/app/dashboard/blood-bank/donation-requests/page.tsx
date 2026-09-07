@@ -69,6 +69,50 @@ export default function BloodBankDonationRequestsPage() {
     newTimeSlot: "",
   })
 
+  // Validation errors for the action dialog
+  const [actionErrors, setActionErrors] = useState<{
+    rejectionReason?: string
+    newDate?: string
+    newTimeSlot?: string
+  }>({})
+
+  const validateActionField = (field: "rejectionReason" | "newDate" | "newTimeSlot", value: string) => {
+    let error = ""
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (field === "rejectionReason") {
+      if (!value.trim()) error = "Rejection reason is required."
+      else if (value.trim().length < 10) error = "Rejection reason must be at least 10 characters."
+    } else if (field === "newDate") {
+      if (!value) error = "New date is required."
+      else if (new Date(value) < today) error = "Date cannot be in the past."
+    } else if (field === "newTimeSlot") {
+      if (!value) error = "Please select a new time slot."
+    }
+    return error
+  }
+
+  const handleActionBlur = (field: "rejectionReason" | "newDate" | "newTimeSlot") => {
+    const error = validateActionField(field, actionData[field])
+    setActionErrors((prev) => ({ ...prev, [field]: error || undefined }))
+  }
+
+  const validateActionForm = () => {
+    const newErrors: typeof actionErrors = {}
+    if (actionType === "reject") {
+      const err = validateActionField("rejectionReason", actionData.rejectionReason)
+      if (err) newErrors.rejectionReason = err
+    } else if (actionType === "reschedule") {
+      const dateErr = validateActionField("newDate", actionData.newDate)
+      if (dateErr) newErrors.newDate = dateErr
+      const slotErr = validateActionField("newTimeSlot", actionData.newTimeSlot)
+      if (slotErr) newErrors.newTimeSlot = slotErr
+    }
+    setActionErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   //TODO i have to add a check for the session for blood bank id and user role before fetching data
 //TODO  i have used session.user.id instead of session.user.bloodBankId 
 
@@ -150,6 +194,7 @@ export default function BloodBankDonationRequestsPage() {
     setSelectedRequest(request)
     setActionType(action)
     setActionData({ rejectionReason: "", newDate: "", newTimeSlot: "" })
+    setActionErrors({})
 
     if (action === "reschedule") {
       // Fetch available slots for the original date
@@ -164,6 +209,7 @@ export default function BloodBankDonationRequestsPage() {
 
   const handleDateChange = async (date: string) => {
     setActionData((prev) => ({ ...prev, newDate: date, newTimeSlot: "" }))
+    setActionErrors((prev) => ({ ...prev, newDate: undefined, newTimeSlot: undefined }))
 
     if (date && session?.user?.id) {
       const slotsResult = await getAvailableTimeSlots(session.user.id, new Date(date))
@@ -175,6 +221,8 @@ export default function BloodBankDonationRequestsPage() {
 
   const handleSubmitAction = async () => {
     if (!selectedRequest) return
+
+    if (!validateActionForm()) return
 
     try {
       const updateData: any = {
@@ -477,10 +525,20 @@ export default function BloodBankDonationRequestsPage() {
                   <Textarea
                     id="rejectionReason"
                     value={actionData.rejectionReason}
-                    onChange={(e) => setActionData((prev) => ({ ...prev, rejectionReason: e.target.value }))}
+                    onChange={(e) => {
+                      setActionData((prev) => ({ ...prev, rejectionReason: e.target.value }))
+                      if (actionErrors.rejectionReason) {
+                        const err = validateActionField("rejectionReason", e.target.value)
+                        setActionErrors((prev) => ({ ...prev, rejectionReason: err || undefined }))
+                      }
+                    }}
+                    onBlur={() => handleActionBlur("rejectionReason")}
                     placeholder="Please provide a reason for rejection..."
                     rows={3}
                   />
+                  {actionErrors.rejectionReason && (
+                    <p className="mt-1 text-sm text-red-500">{actionErrors.rejectionReason}</p>
+                  )}
                 </div>
               )}
 
@@ -493,14 +551,26 @@ export default function BloodBankDonationRequestsPage() {
                       id="newDate"
                       value={actionData.newDate}
                       onChange={(e) => handleDateChange(e.target.value)}
+                      onBlur={() => handleActionBlur("newDate")}
                       min={new Date().toISOString().split("T")[0]}
                     />
+                    {actionErrors.newDate && (
+                      <p className="mt-1 text-sm text-red-500">{actionErrors.newDate}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="newTimeSlot">New Time Slot</Label>
                     <Select
                       value={actionData.newTimeSlot}
-                      onValueChange={(value) => setActionData((prev) => ({ ...prev, newTimeSlot: value }))}
+                      onValueChange={(value) => {
+                        setActionData((prev) => ({ ...prev, newTimeSlot: value }))
+                        if (actionErrors.newTimeSlot) {
+                          setActionErrors((prev) => ({ ...prev, newTimeSlot: undefined }))
+                        }
+                      }}
+                      onOpenChange={(open) => {
+                        if (!open) handleActionBlur("newTimeSlot")
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select new time slot" />
@@ -513,6 +583,9 @@ export default function BloodBankDonationRequestsPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {actionErrors.newTimeSlot && (
+                      <p className="mt-1 text-sm text-red-500">{actionErrors.newTimeSlot}</p>
+                    )}
                   </div>
                 </>
               )}
@@ -523,10 +596,6 @@ export default function BloodBankDonationRequestsPage() {
                 </Button>
                 <Button
                   onClick={handleSubmitAction}
-                  disabled={
-                    (actionType === "reject" && !actionData.rejectionReason) ||
-                    (actionType === "reschedule" && (!actionData.newDate || !actionData.newTimeSlot))
-                  }
                   className={`flex-1 ${
                     actionType === "approve"
                       ? "bg-green-600 hover:bg-green-700"

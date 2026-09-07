@@ -84,19 +84,56 @@ const Page = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState('');
 
+  const validateSingleField = (
+    field: keyof typeof formData,
+    value: string
+  ) => {
+    switch (field) {
+      case "name":
+        if (!value.trim()) return "Event name is required.";
+        if (value.trim().length < 3)
+          return "Event name must be at least 3 characters.";
+        return "";
+      case "startDateTime":
+        if (!value) return "Start date & time is required.";
+        return "";
+      case "endDateTime":
+        if (!value) return "End date & time is required.";
+        if (formData.startDateTime && new Date(value) <= new Date(formData.startDateTime))
+          return "End time must be after start time.";
+        return "";
+      case "location":
+        if (!value.trim()) return "Location is required.";
+        return "";
+      case "type":
+        if (!value) return "Type is required.";
+        return "";
+      case "status":
+        if (!value) return "Status is required.";
+        return "";
+      case "description":
+        if (!value.trim()) return "Description is required.";
+        if (value.trim().length < 10)
+          return "Description must be at least 10 characters.";
+        if (value.trim().length > 500)
+          return "Description must be 500 characters or less.";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const handleBlur = (field: keyof typeof formData) => {
+    const error = validateSingleField(field, formData[field]);
+    setErrors((prev) => ({ ...prev, [field]: error || undefined }));
+  };
+
   const validateForm = () => {
     const newErrors: typeof errors = {};
-
-    if (!formData.name.trim()) newErrors.name = "Event name is required.";
-    if (!formData.startDateTime) newErrors.startDateTime = "Start date & time is required.";
-    if (!formData.endDateTime) newErrors.endDateTime = "End date & time is required.";
-    else if (new Date(formData.endDateTime) <= new Date(formData.startDateTime)) newErrors.endDateTime = "End time must be after start time.";
-
-    if (!formData.location.trim()) newErrors.location = "Location is required.";
-    if (!formData.type) newErrors.type = "Type is required.";
-    if (!formData.status) newErrors.status = "Status is required.";
-    if (!formData.description.trim()) newErrors.description = "Description is required.";
-
+    (Object.keys(formData) as Array<keyof typeof formData>).forEach((key) => {
+      const err = validateSingleField(key, formData[key]);
+      if (err) newErrors[key] = err;
+    });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -357,7 +394,13 @@ const Page = () => {
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (errors.name) {
+                        setErrors((prev) => ({ ...prev, name: validateSingleField("name", e.target.value) || undefined }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("name")}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
@@ -370,7 +413,13 @@ const Page = () => {
                       type="datetime-local"
                       required
                       value={formData.startDateTime}
-                      onChange={(e) => setFormData({ ...formData, startDateTime: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, startDateTime: e.target.value });
+                        if (errors.startDateTime) {
+                          setErrors((prev) => ({ ...prev, startDateTime: undefined }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("startDateTime")}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                     {errors.startDateTime && <p className="text-red-500 text-sm mt-1">{errors.startDateTime}</p>}
@@ -382,7 +431,13 @@ const Page = () => {
                       type="datetime-local"
                       required
                       value={formData.endDateTime}
-                      onChange={(e) => setFormData({ ...formData, endDateTime: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, endDateTime: e.target.value });
+                        if (errors.endDateTime) {
+                          setErrors((prev) => ({ ...prev, endDateTime: validateSingleField("endDateTime", e.target.value) || undefined }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("endDateTime")}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                     {errors.endDateTime && <p className="text-red-500 text-sm mt-1">{errors.endDateTime}</p>}
@@ -395,7 +450,13 @@ const Page = () => {
                     type="text"
                     required
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, location: e.target.value });
+                      if (errors.location) {
+                        setErrors((prev) => ({ ...prev, location: validateSingleField("location", e.target.value) || undefined }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("location")}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />
                   {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
@@ -406,7 +467,13 @@ const Page = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                     <select
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as 'emergency' | 'normal' })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, type: e.target.value as 'emergency' | 'normal' });
+                        if (errors.type) {
+                          setErrors((prev) => ({ ...prev, type: undefined }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("type")}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="normal">Normal</option>
@@ -418,7 +485,13 @@ const Page = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as 'upcoming' | 'ongoing' | 'completed' })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, status: e.target.value as 'upcoming' | 'ongoing' | 'completed' });
+                        if (errors.status) {
+                          setErrors((prev) => ({ ...prev, status: undefined }));
+                        }
+                      }}
+                      onBlur={() => handleBlur("status")}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="upcoming">Upcoming</option>
@@ -433,7 +506,13 @@ const Page = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (errors.description) {
+                        setErrors((prev) => ({ ...prev, description: validateSingleField("description", e.target.value) || undefined }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("description")}
                     rows={3}
                     className="w-full border border-gray-300 rounded-md px-3 py-2"
                   />

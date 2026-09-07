@@ -303,6 +303,29 @@ export default function BloodDonationPage() {
     setIsSuccess(false);
   };
 
+  const handleFieldBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const form = e.currentTarget.form;
+    const fieldName = e.currentTarget.name;
+    if (!form || !fieldName) return;
+    try {
+      const formdata = new FormData(form);
+      const validation = fromValidation(
+        formdata,
+        existingDonor ? "existing_blood_donation" : "new_blood_donation"
+      );
+      const fieldErrors: Record<string, string[] | undefined> | undefined =
+        validation?.error?.flatten().fieldErrors;
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldName]: fieldErrors?.[fieldName] || undefined,
+      }));
+    } catch {
+      // Full validation runs on submit; ignore partial blur errors here.
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     try {
       e.preventDefault();
@@ -369,24 +392,18 @@ export default function BloodDonationPage() {
             <h2 className="text-lg font-medium text-gray-800">
               Donation Information
             </h2>
-            <button
+            {/* <button
               type="button"
               onClick={handleDonor}
               className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50"
             >
-              {existingDonor ? (
-                <>
-                  <User className="h-4 w-4 text-gray-500" />
-                  Switch to New Donor
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  <ArrowLeft className="h-4 w-4" />
-                  Switch to Existing Donor
-                </>
-              )}
-            </button>
+
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Switch to Existing Donor
+              </>
+
+            </button> */}
           </div>
         </div>
 
@@ -418,11 +435,11 @@ export default function BloodDonationPage() {
                   <input
                     type="text"
                     name="donor_id"
-                    className={`block w-full rounded-lg border ${
-                      validationErrors?.donor_id
+                    onBlur={handleFieldBlur}
+                    className={`block w-full rounded-lg border ${validationErrors?.donor_id
                         ? "border-red-300"
                         : "border-gray-300"
-                    } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                      } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                     placeholder="DON-1043064479-123"
                   />
                 </div>
@@ -442,11 +459,11 @@ export default function BloodDonationPage() {
                   <input
                     type="text"
                     name="donor_name"
-                    className={`block w-full rounded-lg border ${
-                      validationErrors?.donor_name
+                    onBlur={handleFieldBlur}
+                    className={`block w-full rounded-lg border ${validationErrors?.donor_name
                         ? "border-red-300"
                         : "border-gray-300"
-                    } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                      } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                     placeholder="John Doe"
                   />
                   {validationErrors?.donor_name?.[0] && (
@@ -464,11 +481,11 @@ export default function BloodDonationPage() {
                   <input
                     type="text"
                     name="donor_contact"
-                    className={`block w-full rounded-lg border ${
-                      validationErrors?.donor_contact
+                    onBlur={handleFieldBlur}
+                    className={`block w-full rounded-lg border ${validationErrors?.donor_contact
                         ? "border-red-300"
                         : "border-gray-300"
-                    } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                      } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                     placeholder="9876343210"
                   />
                   {validationErrors?.donor_contact?.[0] && (
@@ -488,11 +505,11 @@ export default function BloodDonationPage() {
               <input
                 type="text"
                 name="donor_address"
-                className={`block w-full rounded-lg border ${
-                  validationErrors?.donor_address
+                onBlur={handleFieldBlur}
+                className={`block w-full rounded-lg border ${validationErrors?.donor_address
                     ? "border-red-300"
                     : "border-gray-300"
-                } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                  } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                 placeholder="City, State, Country"
               />
               {validationErrors?.donor_address?.[0] && (
@@ -513,11 +530,11 @@ export default function BloodDonationPage() {
                 </div>
                 <select
                   name="blood_type"
-                  className={`block w-full rounded-lg border ${
-                    validationErrors?.blood_type
+                  onBlur={handleFieldBlur}
+                  className={`block w-full rounded-lg border ${validationErrors?.blood_type
                       ? "border-red-300"
                       : "border-gray-300"
-                  } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                    } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                 >
                   <option value="">Select Blood Group</option>
                   {bloodTypes.map((type) => (
@@ -541,11 +558,11 @@ export default function BloodDonationPage() {
               </label>
               <select
                 name="donation_type"
-                className={`block w-full rounded-lg border ${
-                  validationErrors?.donation_type
+                onBlur={handleFieldBlur}
+                className={`block w-full rounded-lg border ${validationErrors?.donation_type
                     ? "border-red-300"
                     : "border-gray-300"
-                } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                  } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
               >
                 <option value="">Select Donation Type</option>
                 <option value="whole_blood">Whole Blood</option>
@@ -569,11 +586,11 @@ export default function BloodDonationPage() {
               <input
                 type="number"
                 name="blood_quantity"
-                className={`block w-full rounded-lg border ${
-                  validationErrors?.blood_quantity
+                onBlur={handleFieldBlur}
+                className={`block w-full rounded-lg border ${validationErrors?.blood_quantity
                     ? "border-red-300"
                     : "border-gray-300"
-                } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                  } bg-gray-50 p-2.5 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                 placeholder="1"
                 min="1"
               />
@@ -596,11 +613,11 @@ export default function BloodDonationPage() {
                 <input
                   type="date"
                   name="collected_date"
-                  className={`block w-full rounded-lg border ${
-                    validationErrors?.collected_date
+                  onBlur={handleFieldBlur}
+                  className={`block w-full rounded-lg border ${validationErrors?.collected_date
                       ? "border-red-300"
                       : "border-gray-300"
-                  } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
+                    } bg-gray-50 p-2.5 pl-10 text-gray-900 focus:border-red-500 focus:ring-red-500`}
                   min="2000-01-01"
                   max={new Date().toISOString().split("T")[0]}
                 />

@@ -20,7 +20,7 @@ const signupSchema=baseSchema.extend({
   }),
   profile_picture: z
   .any()
-  .refine((file) => file.size > 0, {
+  .refine((file) => (file?.size ?? 0) > 0, {
     message: "Profile picture is required",
   })
   .refine((file) => file instanceof File && file.size <= MAX_FILE_SIZE, {
@@ -81,7 +81,7 @@ const bloodRequestSchema = z.object({
   requestDate: z.string().min(1, "Request date is required"),
   document: z
   .any()
-  .refine((file) => file.size > 0, {
+  .refine((file) => (file?.size ?? 0) > 0, {
     message: "Blood Requisition Document is required.",
   })
   .refine((file) => file instanceof File && file.size <= MAX_FILE_SIZE, {

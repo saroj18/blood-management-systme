@@ -1,0 +1,13 @@
+Roles & Credentials:
+
+Admin:
+Email: admin00@gmail.com
+Password: Password@123
+
+Blood Bank:
+Email: bloodbank00@gmail.com
+Password: Password@123
+
+Donor:
+Email: donor00@gmail.com
+Password: Password@123

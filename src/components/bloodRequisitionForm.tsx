@@ -36,19 +36,56 @@ const BloodRequisitionForm = () => {
 
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
-    setFormData({
+    const updated = {
       ...formData,
       [name]: value
-    });
+    };
+    setFormData(updated);
+    runFieldValidation(updated, name);
   };
 
   const handleNumberChange = (e: any) => {
     const { name, value } = e.target;
     const numValue = Math.max(0, parseInt(value) || 0);
-    setFormData({
+    const updated = {
       ...formData,
       [name]: numValue
-    });
+    };
+    setFormData(updated);
+    runFieldValidation(updated, name);
+  };
+
+  const runFieldValidation = (data: typeof formData, fieldName: string) => {
+    try {
+      const formdata = new FormData();
+      formdata.append("patientName", data.patientName);
+      formdata.append("contactNumber", data.contactNumber);
+      formdata.append("hospitalName", data.hospitalName);
+      formdata.append("hospitalAddress", data.hospitalAddress);
+      formdata.append("blood_group", data.blood_group);
+      formdata.append("blood_quantity", data.blood_quantity.toString());
+      formdata.append("blood_component", data.blood_component);
+      formdata.append("priorityLevel", data.priorityLevel);
+      formdata.append("requestDate", data.requestDate);
+      formdata.append("notes", data.notes);
+      if (data.document) {
+        formdata.append("document", data.document);
+      }
+
+      const validation = fromValidation(formdata, "blood_request");
+      const fieldErrors: Record<string, string[] | undefined> | undefined =
+        validation?.error?.flatten().fieldErrors;
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldName]: fieldErrors?.[fieldName] || undefined,
+      }));
+    } catch {
+      // Full validation runs on submit; ignore partial blur errors here.
+    }
+  };
+
+  const handleFieldBlur = (fieldName: string) => {
+    runFieldValidation(formData, fieldName);
   };
 
   const handleFileUpload = (e: any) => {
@@ -76,7 +113,6 @@ const BloodRequisitionForm = () => {
 
   const handleSubmit = async(e: any) => {
     e.preventDefault();
-    setIsSubmitting(true);
    try {
     setFileError("");
     const formdata = new FormData();
@@ -98,44 +134,41 @@ const BloodRequisitionForm = () => {
   setValidationErrors(errors);
   if(!errors&&!fileError){
     const file = formdata.get("document");
-    if (file && file instanceof File) {
-      const uploadFile: UploadResult = await uploadAllFile(file, "bloodRequestFile");
-      const mimeType = file.type;
-      if(uploadFile.success&&uploadFile.data){
-        formdata.set("document", JSON.stringify({
-        url: uploadFile.data.secure_url,
-        publicId: uploadFile.data.public_id,
-        fileType:mimeType,
-        }));
-      }else {
-        formdata.set("document", JSON.stringify({
-        url: '',
-        publicId: '',
-        fileType:'',
-        }));
-      }
-    } else {
+    if (!(file && file instanceof File)) {
       setFileError("Please upload a valid file.");
       return;
+    }
+    setIsSubmitting(true);
+    const uploadFile: UploadResult = await uploadAllFile(file, "bloodRequestFile");
+    const mimeType = file.type;
+    if(uploadFile.success&&uploadFile.data){
+      formdata.set("document", JSON.stringify({
+      url: uploadFile.data.secure_url,
+      publicId: uploadFile.data.public_id,
+      fileType:mimeType,
+      }));
+    }else {
+      formdata.set("document", JSON.stringify({
+      url: '',
+      publicId: '',
+      fileType:'',
+      }));
     }
     const response:any=await insertBloodRequest(formdata);
     if(response.success){
     setBloodReqResponse(response);
-    toast.success("Account created successfully!",{
+    toast.success("Request submitted successfully!",{
             autoClose: 3000,
           });
-      setIsSubmitting(false);
       setIsSubmitted(true);
-      }else{
-        setIsSubmitting(false);
       }
-
- 
   }else{
-    console.log(errors);
+    toast.error("Please fix the highlighted errors before submitting.");
   }
    } catch (error) {
     console.error("Error submitting form:", error);
+   } finally {
+    setIsSubmitting(false);
    }
   };
 
@@ -214,6 +247,7 @@ const BloodRequisitionForm = () => {
                       name="patientName"
                       value={formData.patientName}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("patientName")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
@@ -227,6 +261,7 @@ const BloodRequisitionForm = () => {
                       name="contactNumber"
                       value={formData.contactNumber}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("contactNumber")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
@@ -272,6 +307,7 @@ const BloodRequisitionForm = () => {
                       name="hospitalName"
                       value={formData.hospitalName}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("hospitalName")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
@@ -285,6 +321,7 @@ const BloodRequisitionForm = () => {
                       name="hospitalAddress"
                       value={formData.hospitalAddress}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("hospitalAddress")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
@@ -334,6 +371,7 @@ const BloodRequisitionForm = () => {
                       name="blood_group"
                       value={formData.blood_group}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("blood_group")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       <option value="">Select your Blood Group</option>
@@ -354,6 +392,7 @@ const BloodRequisitionForm = () => {
                       name="blood_quantity"
                       value={formData.blood_quantity}
                       onChange={handleNumberChange}
+                      onBlur={() => handleFieldBlur("blood_quantity")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       placeholder="1"
                     />
@@ -394,6 +433,7 @@ const BloodRequisitionForm = () => {
           <select
           value={formData.blood_component}
           onChange={handleInputChange}
+          onBlur={() => handleFieldBlur("blood_component")}
             name="blood_component"
             className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
@@ -437,6 +477,7 @@ const BloodRequisitionForm = () => {
                         name="requestDate"
                         value={formData.requestDate}
                         onChange={handleInputChange}
+                        onBlur={() => handleFieldBlur("requestDate")}
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         min={new Date().toISOString().split('T')[0]}
                       />
@@ -451,6 +492,7 @@ const BloodRequisitionForm = () => {
                       name="priorityLevel"
                       value={formData.priorityLevel}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("priorityLevel")}
                       className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                       <option value="Normal">Normal</option>
@@ -500,6 +542,7 @@ const BloodRequisitionForm = () => {
                     rows={3}
                     value={formData.notes}
                     onChange={handleInputChange}
+                    onBlur={() => handleFieldBlur("notes")}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="Any special requirements or instructions..."
                   ></textarea>

@@ -93,6 +93,55 @@ export default function DonorDonationSchedulePage() {
     notes: "",
   });
 
+  // Validation errors state
+  const [errors, setErrors] = useState<{
+    bloodBankId?: string;
+    requestedDate?: string;
+    timeSlot?: string;
+    notes?: string;
+  }>({});
+
+  const validateField = (field: keyof typeof formData, value: string) => {
+    let error = "";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    switch (field) {
+      case "bloodBankId":
+        if (!value) error = "Please select a blood bank.";
+        break;
+      case "requestedDate":
+        if (!value) error = "Preferred date is required.";
+        else if (new Date(value) < today)
+          error = "Date cannot be in the past.";
+        break;
+      case "timeSlot":
+        if (!value) error = "Please select a time slot.";
+        break;
+      case "notes":
+        if (value.length > 500) error = "Notes must be 500 characters or less.";
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+    (Object.keys(formData) as Array<keyof typeof formData>).forEach((key) => {
+      const err = validateField(key, formData[key]);
+      if (err) newErrors[key] = err;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (field: keyof typeof formData) => {
+    const error = validateField(field, formData[field]);
+    setErrors((prev) => ({ ...prev, [field]: error || undefined }));
+  };
+
   useEffect(() => {
     if (session?.user?.id) {
       fetchData(session?.user?.id);
@@ -124,6 +173,7 @@ export default function DonorDonationSchedulePage() {
 
   const handleDateChange = async (date: string) => {
     setFormData((prev) => ({ ...prev, requestedDate: date, timeSlot: "" }));
+    setErrors((prev) => ({ ...prev, requestedDate: undefined, timeSlot: undefined }));
 
     if (date && formData.bloodBankId) {
       const slotsResult = await getAvailableTimeSlots(
@@ -138,6 +188,7 @@ export default function DonorDonationSchedulePage() {
 
   const handleBloodBankChange = async (bloodBankId: string) => {
     setFormData((prev) => ({ ...prev, bloodBankId, timeSlot: "" }));
+    setErrors((prev) => ({ ...prev, bloodBankId: undefined, timeSlot: undefined }));
 
     if (formData.requestedDate && bloodBankId) {
       const slotsResult = await getAvailableTimeSlots(
@@ -152,6 +203,9 @@ export default function DonorDonationSchedulePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
 
     try {
@@ -170,6 +224,7 @@ export default function DonorDonationSchedulePage() {
           timeSlot: "",
           notes: "",
         });
+        setErrors({});
         fetchData();
         alert("Donation request submitted successfully!");
       } else {
@@ -300,6 +355,9 @@ export default function DonorDonationSchedulePage() {
                 <Select
                   value={formData.bloodBankId}
                   onValueChange={handleBloodBankChange}
+                  onOpenChange={(open) => {
+                    if (!open) handleBlur("bloodBankId");
+                  }}
                 >
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select blood bank" />
@@ -312,6 +370,9 @@ export default function DonorDonationSchedulePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.bloodBankId && (
+                  <p className="mt-1 text-sm text-red-500">{errors.bloodBankId}</p>
+                )}
               </div>
 
               <div>
@@ -320,9 +381,13 @@ export default function DonorDonationSchedulePage() {
                   type="date"
                   value={formData.requestedDate}
                   onChange={(e) => handleDateChange(e.target.value)}
+                  onBlur={() => handleBlur("requestedDate")}
                   min={new Date().toISOString().split("T")[0]}
                   className="bg-white"
                 />
+                {errors.requestedDate && (
+                  <p className="mt-1 text-sm text-red-500">{errors.requestedDate}</p>
+                )}
               </div>
 
               <div>
@@ -332,6 +397,9 @@ export default function DonorDonationSchedulePage() {
                   onValueChange={(value) =>
                     setFormData((prev) => ({ ...prev, timeSlot: value }))
                   }
+                  onOpenChange={(open) => {
+                    if (!open) handleBlur("timeSlot");
+                  }}
                   disabled={!formData.requestedDate || !formData.bloodBankId}
                 >
                   <SelectTrigger className="bg-white">
@@ -345,6 +413,9 @@ export default function DonorDonationSchedulePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.timeSlot && (
+                  <p className="mt-1 text-sm text-red-500">{errors.timeSlot}</p>
+                )}
               </div>
 
               <div>
@@ -357,10 +428,14 @@ export default function DonorDonationSchedulePage() {
                       notes: e.target.value,
                     }))
                   }
+                  onBlur={() => handleBlur("notes")}
                   placeholder="Any special requirements or notes..."
                   rows={3}
                   className="bg-white"
                 />
+                {errors.notes && (
+                  <p className="mt-1 text-sm text-red-500">{errors.notes}</p>
+                )}
               </div>
 
               <div className="flex gap-2 pt-4">
@@ -374,12 +449,7 @@ export default function DonorDonationSchedulePage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    isSubmitting ||
-                    !formData.bloodBankId ||
-                    !formData.requestedDate ||
-                    !formData.timeSlot
-                  }
+                  disabled={isSubmitting}
                   className="flex-1 bg-red-600 hover:bg-red-700"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Request"}

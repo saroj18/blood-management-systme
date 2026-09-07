@@ -42,7 +42,7 @@ interface DashboardStats {
 }
 
 const DashboardPage = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalBloodUnits: 0,
@@ -88,20 +88,20 @@ const DashboardPage = () => {
       }
     };
 
-    if (session) {
+    if (status === "authenticated") {
       fetchDashboardData();
-    } else if (!session) {
-      router.push('/login');
+    } else if (status === "unauthenticated") {
+      router.push("/login");
     }
-  }, [session, router]);
+  }, [session, status, router]);
 
-  // if (status === 'loading' || loading) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-  //     </div>
-  //   );
-  // }
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -134,13 +134,6 @@ const DashboardPage = () => {
     { bloodType: 'B-', units: 12, threshold: 25 }
   ];
 
-
-
-  useEffect(() => {
-    if (!session) {
-      router.push("/");
-    }
-  }, [session, router]);
 
 
 //   return (

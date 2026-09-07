@@ -36,15 +36,27 @@ interface RejectionModalProps {
 export function RejectionModal({ request, onClose }: RejectionModalProps) {
   const [loading, setLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
+
+  const validateReason = (value: string) => {
+    if (!value.trim()) return "Rejection reason is required.";
+    if (value.trim().length < 10)
+      return "Rejection reason must be at least 10 characters.";
+    return "";
+  };
+
+  const handleBlur = () => {
+    setError(validateReason(rejectionReason));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!rejectionReason.trim()) {
-      toast.warning("Rejection Reason Required", {
-        description: "Please provide a reason for rejecting this request.",
-      });
+    const reasonError = validateReason(rejectionReason);
+    setError(reasonError);
+
+    if (reasonError) {
       return;
     }
 
@@ -109,11 +121,17 @@ export function RejectionModal({ request, onClose }: RejectionModalProps) {
             <Textarea
               id="rejection-reason"
               value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
+              onChange={(e) => {
+                setRejectionReason(e.target.value);
+                if (error) {
+                  setError(validateReason(e.target.value));
+                }
+              }}
+              onBlur={handleBlur}
               placeholder="Please provide a detailed reason for rejecting this donation request..."
               rows={4}
-              required
             />
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <p className="text-xs text-muted-foreground">
               This reason will be communicated to the donor.
             </p>

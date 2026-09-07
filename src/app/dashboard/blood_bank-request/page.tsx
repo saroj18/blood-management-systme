@@ -114,10 +114,24 @@ const Page = () => {
       console.error("Error fetching blood requests:", err);
     }
   };
+  const validateNote = (note: string) => {
+    if (!note.trim()) return "Please add a note before saving the status.";
+    if (note.trim().length < 10)
+      return "Note must be at least 10 characters long.";
+    if (note.trim().length > 500)
+      return "Note must be 500 characters or less.";
+    return "";
+  };
+
+  const handleNoteBlur = () => {
+    setNoteError(validateNote(bloodBankStatusNote));
+  };
+
   const updateStatusBloodRequest = async (brObjectId: string, requestId: string, status: string,prevStatus:string) => {
     try {
       if(status!==prevStatus){
-        if (bloodBankStatusNote) {
+        const noteValidation = validateNote(bloodBankStatusNote);
+        if (!noteValidation) {
 
         setNoteError("");
         const response = await changeBloodRequestStatus(brObjectId, requestId, status, bloodBankStatusNote);
@@ -126,9 +140,7 @@ const Page = () => {
         setSelectedRequest(null);
         setBloodBankStatusNote('');
       } else {
-
-
-        setNoteError("Please add a note before saving the status.");
+        setNoteError(noteValidation);
       }
       }else{
         if(status==="Pending"){
@@ -397,7 +409,13 @@ const Page = () => {
                   <textarea
                     className="w-full min-h-[150px] p-4 rounded-2xl border border-gray-200 bg-white shadow-sm text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
                     value={bloodBankStatusNote}
-                    onChange={(e) => setBloodBankStatusNote(e.target.value)}
+                    onChange={(e) => {
+                      setBloodBankStatusNote(e.target.value);
+                      if (noteError) {
+                        setNoteError(validateNote(e.target.value));
+                      }
+                    }}
+                    onBlur={handleNoteBlur}
                     placeholder={"Note"} ></textarea>
                   {noteError && (
                     <div className="rounded-md bg-red-50 p-2">

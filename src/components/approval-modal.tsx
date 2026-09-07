@@ -44,10 +44,49 @@ export function ApprovalModal({ request, onClose }: ApprovalModalProps) {
     format(new Date(request.requested_date), "yyyy-MM-dd")
   );
   const [newTimeSlot, setNewTimeSlot] = useState(request.scheduled_time_slot);
+  const [errors, setErrors] = useState<{
+    newDate?: string;
+    newTimeSlot?: string;
+  }>({});
   const router = useRouter();
+
+  const validateField = (field: "newDate" | "newTimeSlot") => {
+    let error = "";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (field === "newDate") {
+      if (!newDate) error = "New date is required.";
+      else if (new Date(newDate) < today) error = "Date cannot be in the past.";
+    } else if (field === "newTimeSlot") {
+      if (!newTimeSlot.trim()) error = "Time slot is required.";
+      else if (!/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/.test(newTimeSlot.trim()))
+        error = "Use a valid time range, e.g., 10:00-11:00";
+    }
+    return error;
+  };
+
+  const validateSchedule = () => {
+    if (!changeSchedule) return true;
+    const newErrors: typeof errors = {};
+    const dateErr = validateField("newDate");
+    if (dateErr) newErrors.newDate = dateErr;
+    const slotErr = validateField("newTimeSlot");
+    if (slotErr) newErrors.newTimeSlot = slotErr;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (field: "newDate" | "newTimeSlot") => {
+    const error = validateField(field);
+    setErrors((prev) => ({ ...prev, [field]: error || undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateSchedule()) return;
+
     setLoading(true);
 
     try {
@@ -101,9 +140,10 @@ export function ApprovalModal({ request, onClose }: ApprovalModalProps) {
               <Checkbox
                 id="change-schedule"
                 checked={changeSchedule}
-                onCheckedChange={(checked) =>
-                  setChangeSchedule(checked as boolean)
-                }
+                onCheckedChange={(checked) => {
+                  setChangeSchedule(checked as boolean);
+                  setErrors({});
+                }}
               />
               <Label htmlFor="change-schedule" className="text-sm">
                 Modify schedule details
@@ -121,9 +161,17 @@ export function ApprovalModal({ request, onClose }: ApprovalModalProps) {
                     id="new-date"
                     type="date"
                     value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setNewDate(e.target.value);
+                      if (errors.newDate) {
+                        setErrors((prev) => ({ ...prev, newDate: undefined }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("newDate")}
                   />
+                  {errors.newDate && (
+                    <p className="text-sm text-red-500">{errors.newDate}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -138,10 +186,18 @@ export function ApprovalModal({ request, onClose }: ApprovalModalProps) {
                     id="new-time-slot"
                     type="text"
                     value={newTimeSlot}
-                    onChange={(e) => setNewTimeSlot(e.target.value)}
+                    onChange={(e) => {
+                      setNewTimeSlot(e.target.value);
+                      if (errors.newTimeSlot) {
+                        setErrors((prev) => ({ ...prev, newTimeSlot: undefined }));
+                      }
+                    }}
+                    onBlur={() => handleBlur("newTimeSlot")}
                     placeholder="e.g., 10:00-11:00"
-                    required
                   />
+                  {errors.newTimeSlot && (
+                    <p className="text-sm text-red-500">{errors.newTimeSlot}</p>
+                  )}
                 </div>
               </div>
             )}
